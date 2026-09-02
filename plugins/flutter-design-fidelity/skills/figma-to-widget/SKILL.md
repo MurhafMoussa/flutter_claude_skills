@@ -5,11 +5,12 @@ description: The translation contract from Figma structures to Flutter widgets â
 
 # Figma to Widget
 
-> **Profile first.** Read `.claude/flutter-profile.yaml` in the project root. `tokens`
+> **Profile first.** Read `.agents/flutter-profile.yaml` in the project root, falling
+> back to legacy `.claude/flutter-profile.yaml`. `tokens`
 > decides how the values in a frame get resolved and `structure` decides where the new
 > widget file goes. The mapping table below is stack-independent and holds under every
 > profile. Field list:
-> `${CLAUDE_PLUGIN_ROOT}/skills/design-tokens/references/flutter-profile.md`.
+> `../design-tokens/references/flutter-profile.md`, relative to this skill directory.
 
 The failure mode this prevents: translating a design by reading pixel positions and
 reproducing them with `Stack` and `Positioned`. That output matches the artboard exactly
@@ -18,10 +19,10 @@ and breaks on every other screen size. Figma's layout system maps cleanly onto F
 
 ## Prerequisite
 
-Check whether the Figma MCP server is connected. If it is, pull the frame directly and
-read real values. If it is not, say so before starting: without it, every value is being
-read off a rasterized image and is a guess. Ask for the design tokens, a Dev Mode
-inspection export, or the spacing scale rather than guessing silently.
+Check whether a connected Figma tool is available. If it is, pull the frame directly and
+read real values. If it is not, say so before starting: without direct Figma access,
+every value is being read off a rasterized image and is a guess. Ask for the design
+tokens, a Dev Mode inspection export, or the spacing scale rather than guessing silently.
 
 ## The mapping
 

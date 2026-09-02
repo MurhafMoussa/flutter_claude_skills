@@ -1,13 +1,39 @@
 # Changelog
 
 Skill text is the product here, so a wording change that alters what an agent does counts
-as a release. Bump the `version` in both `plugin.json` and `.claude-plugin/marketplace.json`
-together — Claude Code keys its cache on that string, and users never see an update
-without it. `scripts/validate.py` fails the build if the two disagree.
+as a release. Bump the `version` in the Claude and Codex manifests and in the marketplace
+together; both hosts cache installed plugins. `scripts/validate.py` fails the build if
+the copies disagree.
 
 Versioning follows semver from the *consumer's* point of view. A check that starts
 failing a project that previously passed is a breaking change, even though nothing about
 the project changed — the gate's verdict is the contract.
+
+## 2.2.0
+
+Additive Codex support. The eleven existing Flutter guidance skills keep their behavior;
+`flutter-adapt` moves from a Claude-only command to a twelfth, portable skill.
+
+### Added
+
+- Codex plugin manifests for both plugin packages and a repo marketplace at
+  `.agents/plugins/marketplace.json`.
+- Codex vendoring through `install.sh --codex`; `--both` installs for Claude Code and
+  Codex together. Codex project skills land in `.agents/skills` and personal skills in
+  `~/.agents/skills`.
+- Validation for Codex manifests, marketplace entries, and provider-neutral skill links.
+
+### Changed
+
+- The suite and both marketplace catalogs now use the provider-neutral
+  `flutter-craft-skills` name, matching the renamed GitHub repository.
+- `flutter-adapt` is now a normal skill, so Codex invokes it as `$flutter-adapt` while the
+  existing Claude Code invocation remains `/flutter-code-quality:flutter-adapt`.
+- New profiles and convention maps use `.agents/flutter-profile.yaml` and
+  `.agents/flutter-conventions.md`. Existing `.claude/` files remain a supported fallback,
+  and the review gate prefers `.agents/` when both exist.
+- Bundled scripts and cross-skill references resolve relative to the loaded skill instead
+  of relying on the Claude-only `CLAUDE_PLUGIN_ROOT` environment variable.
 
 ## 2.1.0
 

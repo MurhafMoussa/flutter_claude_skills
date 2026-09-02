@@ -2,9 +2,9 @@
 # Pre-commit quality gate for Flutter projects.
 # Reports findings; never modifies code.
 #
-# Reads .claude/flutter-profile.yaml if present, so the conventions it enforces are the
-# ones the project actually holds. With no profile it behaves exactly as it did before
-# the profile existed.
+# Reads .agents/flutter-profile.yaml if present, with a legacy .claude fallback, so the
+# conventions it enforces are the ones the project actually holds. With no profile it
+# behaves exactly as it did before the profile existed.
 #
 # Written for bash 3.2 (the version macOS ships) — no mapfile, no associative arrays.
 #
@@ -19,7 +19,7 @@ set -uo pipefail
 
 SKIP_TESTS=false
 FORCE_ALL=false
-PROFILE_PATH=".claude/flutter-profile.yaml"
+PROFILE_PATH=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -30,6 +30,16 @@ while [ $# -gt 0 ]; do
     *) printf 'gate: unknown option %s\n' "$1" >&2; exit 2 ;;
   esac
 done
+
+if [ -z "$PROFILE_PATH" ]; then
+  if [ -f .agents/flutter-profile.yaml ]; then
+    PROFILE_PATH=".agents/flutter-profile.yaml"
+  elif [ -f .claude/flutter-profile.yaml ]; then
+    PROFILE_PATH=".claude/flutter-profile.yaml"
+  else
+    PROFILE_PATH=".agents/flutter-profile.yaml"
+  fi
+fi
 
 BLOCKING=0
 BLOCKERS=""
@@ -58,7 +68,7 @@ command -v dart    >/dev/null 2>&1 || die "dart is not on PATH"
 # ---------------------------------------------------------------- profile
 #
 # Defaults are the conventions the gate enforced before the profile existed, so a project
-# with no .claude/flutter-profile.yaml sees exactly the behaviour it saw before.
+# with no project profile sees exactly the behaviour it saw before.
 #
 # An unrecognised value is fatal rather than ignored. Treating `riverpood` as the default
 # would enforce the opposite of what the project asked for, with nothing in the output to

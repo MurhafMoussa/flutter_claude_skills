@@ -176,12 +176,12 @@ class BalanceCard extends StatelessWidget {
 EOF
 ( cd "$PP" && git add -A >/dev/null )
 
-write_profile() { mkdir -p "$PP/.claude" && printf '%s\n' "$1" > "$PP/.claude/flutter-profile.yaml"; }
+write_profile() { mkdir -p "$PP/.agents" && printf '%s\n' "$1" > "$PP/.agents/flutter-profile.yaml"; }
 run_profiled()  { ( cd "$PP" && bash "$GATE" --skip-tests 2>&1 ); }
 code_profiled() { ( cd "$PP" && bash "$GATE" --skip-tests >/dev/null 2>&1; echo $? ); }
 
 # Baseline: no profile must behave exactly as it did before profiles existed.
-rm -rf "$PP/.claude"
+rm -rf "$PP/.agents" "$PP/.claude"
 BASE_OUT="$(run_profiled)"
 
 # The fixture has to be format-clean and analyzer-clean, or those block under every
@@ -189,9 +189,22 @@ BASE_OUT="$(run_profiled)"
 expect_absent "$BASE_OUT" "FAIL: dart format" "profile fixture is format-clean"
 expect_absent "$BASE_OUT" "FAIL: flutter analyze" "profile fixture is analyzer-clean"
 expect_exit "$(code_profiled)" 1 "no profile: hardcoded values still block"
-expect_contains "$BASE_OUT" "defaults (no .claude/flutter-profile.yaml)" "no profile: says so in the header"
+expect_contains "$BASE_OUT" "defaults (no .agents/flutter-profile.yaml)" "no profile: says so in the header"
 expect_contains "$BASE_OUT" "FAIL: no hardcoded colors" "no profile: colors block"
 expect_contains "$BASE_OUT" "FAIL: use EdgeInsetsDirectional" "no profile: RTL blocks with locales undeclared"
+
+# Existing Claude profiles remain supported, but the provider-neutral .agents file wins
+# if a project contains both.
+mkdir -p "$PP/.claude"
+printf 'tokens: none\n' > "$PP/.claude/flutter-profile.yaml"
+LEGACY_OUT="$(run_profiled)"
+expect_contains "$LEGACY_OUT" ".claude/flutter-profile.yaml" "legacy Claude profile is discovered"
+expect_contains "$LEGACY_OUT" "skipped: no hardcoded colors" "legacy Claude profile is applied"
+write_profile 'tokens: theme_extension'
+PREFERRED_OUT="$(run_profiled)"
+expect_contains "$PREFERRED_OUT" ".agents/flutter-profile.yaml" ".agents profile takes precedence"
+expect_contains "$PREFERRED_OUT" "FAIL: no hardcoded colors" ".agents profile controls the verdict"
+rm -rf "$PP/.claude"
 
 # tokens: none — the project has no token layer, so the token checks have nothing to
 # point at and must not run. A skipped check has to say it was skipped.
@@ -249,7 +262,7 @@ expect_exit "$(code_profiled)" 2 "an unrecognised profile value exits 2"
 expect_contains "$BAD_OUT" "is not a recognised value" "and names the offending field"
 expect_absent   "$BAD_OUT" "=== Summary ===" "and does not go on to report on the code"
 
-rm -rf "$PP/.claude"
+rm -rf "$PP/.agents"
 
 # ---------------------------------------------------------------- reuse and assets
 
@@ -306,10 +319,10 @@ expect_contains "$RA_OUT" "WARN: no inline TextStyle" "flags an inline TextStyle
 expect_exit "$RA_CODE" 0 "the new reuse and asset checks warn rather than block"
 
 # tokens: none has no typography source to point at either.
-mkdir -p "$RA/.claude" && printf 'tokens: none\n' > "$RA/.claude/flutter-profile.yaml"
+mkdir -p "$RA/.agents" && printf 'tokens: none\n' > "$RA/.agents/flutter-profile.yaml"
 RA_TN="$(cd "$RA" && bash "$GATE" --skip-tests --all 2>&1)"
 expect_contains "$RA_TN" "skipped: no inline TextStyle" "tokens: none skips the TextStyle check"
-rm -rf "$RA/.claude"
+rm -rf "$RA/.agents"
 
 # Scope: a duplicate the current change is not part of belongs to some other commit.
 # Reporting it here buries the findings that are actually this diff's.

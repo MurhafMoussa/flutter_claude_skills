@@ -1,0 +1,28 @@
+{
+  "name": "flutter-design-fidelity",
+  "version": "2.2.0",
+  "description": "Keeps Flutter implementation matching the design. Enforces design tokens over hardcoded values, translates Figma Auto Layout into Row and Column rather than Stack, runs a screenshot diff loop instead of accepting the first render, and freezes the result in golden tests.",
+  "author": {
+    "name": "Mohamed Draz",
+    "url": "https://github.com/draz26648"
+  },
+  "homepage": "https://github.com/draz26648/flutter-craft-skills",
+  "repository": "https://github.com/draz26648/flutter-craft-skills",
+  "license": "MIT",
+  "keywords": ["flutter", "figma", "design-tokens", "golden-tests"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Flutter Design Fidelity",
+    "shortDescription": "Turn designs into resilient, visually verified Flutter UI.",
+    "longDescription": "Flutter workflows for design tokens, Figma-to-widget translation, screenshot comparison, and maintainable golden tests.",
+    "developerName": "Mohamed Draz",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write", "Execute"],
+    "websiteURL": "https://github.com/draz26648/flutter-craft-skills",
+    "defaultPrompt": [
+      "Build this Flutter screen from the design.",
+      "Check this Flutter UI against its reference.",
+      "Add robust golden tests for this widget."
+    ]
+  }
+}

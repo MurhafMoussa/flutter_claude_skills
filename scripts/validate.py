@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Repository validator for the draz-flutter skill marketplace.
+"""Repository validator for the Flutter Craft Skills marketplace.
 
 Checks the things that silently rot: skill frontmatter, name/directory agreement,
-description limits, manifest consistency, and the duplicate-tree regression that this
-repo already suffered once.
+description limits, Claude/Codex manifest consistency, and the duplicate-tree regression
+that this repo already suffered once.
 
 Usage: python3 scripts/validate.py
 Exit codes: 0 clean, 1 at least one error.
@@ -18,16 +18,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Claude Code truncates past this; well before it a description stops being read closely.
+# Hosts may truncate long discovery metadata; well before this a description stops being
+# read closely.
 DESCRIPTION_HARD_LIMIT = 1024
 DESCRIPTION_SOFT_LIMIT = 800
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
-# `${CLAUDE_PLUGIN_ROOT}/skills/<skill>/references/<file>` resolves from the plugin root,
-# which is how one skill points at a file owned by another. A bare `references/<file>`
-# resolves from the skill's own directory.
-PLUGIN_ROOT_REF_RE = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/([A-Za-z0-9_./-]+)")
-LOCAL_REF_RE = re.compile(r"(?:scripts|references)/[A-Za-z0-9_.-]+")
+# A skill may address its own resources or another skill bundled beside it. The latter is
+# localized by install.sh when skills are vendored independently.
+RESOURCE_REF_RE = re.compile(
+    r"(?<![A-Za-z0-9_.-])((?:\.\./[A-Za-z0-9_.-]+/)?(?:scripts|references)/[A-Za-z0-9_.-]+)"
+)
 
 # Files deliberately duplicated across plugins, because each plugin has to work when it is
 # the only one installed. Duplication is only safe while something fails the build when the
@@ -74,26 +75,45 @@ def parse_frontmatter(path: Path) -> dict[str, str] | None:
             fields[key] = m.group(2).strip()
         elif key and line.strip():
             fields[key] += " " + line.strip()
+
+    for field, raw in list(fields.items()):
+        if raw.startswith('"'):
+            try:
+                value = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                error(f"{rel(path)}: frontmatter field '{field}' has invalid quoting: {exc}")
+                return None
+            if not isinstance(value, str):
+                error(f"{rel(path)}: frontmatter field '{field}' must be a string")
+                return None
+            fields[field] = value
+        elif raw.startswith("'"):
+            if not raw.endswith("'"):
+                error(f"{rel(path)}: frontmatter field '{field}' has invalid quoting")
+                return None
+            fields[field] = raw[1:-1].replace("''", "'")
+        elif re.search(r":\s", raw):
+            error(
+                f"{rel(path)}: frontmatter field '{field}' contains an unquoted ': ' "
+                "and is not valid YAML"
+            )
+            return None
     return fields
 
 
 def check_links(md: Path, body: str, skill_dir: Path | None, plugin_dir: Path) -> None:
     """Every referenced script and reference file must exist, and be addressed portably."""
     if "$SKILL_DIR" in body:
+        error(f"{rel(md)}: uses $SKILL_DIR, which is not a real variable")
+    if "CLAUDE_PLUGIN_ROOT" in body:
         error(
-            f"{rel(md)}: uses $SKILL_DIR, which is not a real variable. "
-            "Use ${CLAUDE_PLUGIN_ROOT} instead."
+            f"{rel(md)}: uses CLAUDE_PLUGIN_ROOT, which is unavailable in Codex. "
+            "Resolve resources relative to the loaded SKILL.md path."
         )
 
-    for target in PLUGIN_ROOT_REF_RE.findall(body):
-        if not (plugin_dir / target).is_file():
-            error(f"{rel(md)}: references '${{CLAUDE_PLUGIN_ROOT}}/{target}' which does not exist")
-
-    # Strip the plugin-root links so their tails are not re-checked as skill-local paths.
-    remainder = PLUGIN_ROOT_REF_RE.sub("", body)
     if skill_dir is None:
         return
-    for ref in LOCAL_REF_RE.findall(remainder):
+    for ref in RESOURCE_REF_RE.findall(body):
         if not (skill_dir / ref).is_file():
             error(f"{rel(md)}: references '{ref}' which does not exist")
 
@@ -195,6 +215,64 @@ def main() -> int:
     if on_disk != listed:
         error(f"marketplace.json lists {listed} but plugins/ contains {on_disk}")
 
+    # --- Codex marketplace ---------------------------------------------------------
+    codex_marketplace_path = ROOT / ".agents" / "plugins" / "marketplace.json"
+    if not codex_marketplace_path.is_file():
+        error("missing .agents/plugins/marketplace.json")
+        codex_marketplace: dict[str, object] = {}
+    else:
+        try:
+            codex_marketplace = json.loads(codex_marketplace_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            error(f".agents/plugins/marketplace.json is not valid JSON: {exc}")
+            codex_marketplace = {}
+
+    codex_entries = codex_marketplace.get("plugins", [])
+    if codex_marketplace.get("name") != marketplace.get("name"):
+        error(
+            "Codex marketplace name "
+            f"{codex_marketplace.get('name')!r} does not match Claude marketplace name "
+            f"{marketplace.get('name')!r}"
+        )
+    if not isinstance(codex_entries, list) or not codex_entries:
+        error("Codex marketplace declares no plugins")
+        codex_entries = []
+
+    codex_listed = sorted(
+        entry.get("name", "") for entry in codex_entries if isinstance(entry, dict)
+    )
+    if on_disk != codex_listed:
+        error(f"Codex marketplace lists {codex_listed} but plugins/ contains {on_disk}")
+
+    for entry in codex_entries:
+        if not isinstance(entry, dict):
+            error("Codex marketplace contains a non-object plugin entry")
+            continue
+        pname = entry.get("name", "<unnamed>")
+        source = entry.get("source")
+        expected_path = f"./plugins/{pname}"
+        if not isinstance(source, dict) or source.get("source") != "local":
+            error(f"Codex marketplace plugin '{pname}' must use a local source")
+        elif source.get("path") != expected_path:
+            error(
+                f"Codex marketplace plugin '{pname}' source is {source.get('path')!r}; "
+                f"expected {expected_path!r}"
+            )
+        policy = entry.get("policy")
+        if not isinstance(policy, dict):
+            error(f"Codex marketplace plugin '{pname}' has no policy object")
+        else:
+            if policy.get("installation") not in {
+                "NOT_AVAILABLE",
+                "AVAILABLE",
+                "INSTALLED_BY_DEFAULT",
+            }:
+                error(f"Codex marketplace plugin '{pname}' has invalid installation policy")
+            if policy.get("authentication") not in {"ON_INSTALL", "ON_USE"}:
+                error(f"Codex marketplace plugin '{pname}' has invalid authentication policy")
+        if not entry.get("category"):
+            error(f"Codex marketplace plugin '{pname}' has no category")
+
     # --- each plugin ---------------------------------------------------------------
     all_skill_names: dict[str, str] = {}
 
@@ -230,6 +308,48 @@ def main() -> int:
             )
         if not manifest.get("version"):
             error(f"{rel(manifest_path)}: no version — users never receive updates without one")
+
+        codex_manifest_path = plugin_dir / ".codex-plugin" / "plugin.json"
+        if not codex_manifest_path.is_file():
+            error(f"{rel(plugin_dir)}: missing .codex-plugin/plugin.json")
+        else:
+            try:
+                codex_manifest = json.loads(codex_manifest_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError as exc:
+                error(f"{rel(codex_manifest_path)}: not valid JSON: {exc}")
+            else:
+                if codex_manifest.get("name") != pname:
+                    error(
+                        f"{rel(codex_manifest_path)}: name {codex_manifest.get('name')!r} "
+                        f"does not match marketplace entry '{pname}'"
+                    )
+                if codex_manifest.get("version") != manifest.get("version"):
+                    error(
+                        f"plugin '{pname}': Codex version "
+                        f"{codex_manifest.get('version')!r} but Claude version "
+                        f"{manifest.get('version')!r}"
+                    )
+                if codex_manifest.get("skills") != "./skills/":
+                    error(f"{rel(codex_manifest_path)}: skills must point to './skills/'")
+                interface = codex_manifest.get("interface")
+                required_interface = {
+                    "displayName",
+                    "shortDescription",
+                    "longDescription",
+                    "developerName",
+                    "category",
+                    "capabilities",
+                    "defaultPrompt",
+                }
+                if not isinstance(interface, dict):
+                    error(f"{rel(codex_manifest_path)}: missing interface metadata")
+                else:
+                    missing = sorted(key for key in required_interface if not interface.get(key))
+                    if missing:
+                        error(
+                            f"{rel(codex_manifest_path)}: missing interface fields "
+                            f"{', '.join(missing)}"
+                        )
 
         skills_dir = plugin_dir / "skills"
         if not skills_dir.is_dir():

@@ -1,11 +1,12 @@
 ---
 name: state-management
-description: State-management conventions — state shape, safe updates after an await, narrow rebuild scope, and the test pattern — resolved against whichever stack the project uses: Bloc, Cubit, Riverpod, Provider, signals, or plain setState. Use this whenever writing or modifying any Cubit, Bloc, Notifier, provider, or state class, whenever wiring a widget to state, whenever a rebuild or setState question comes up, and whenever adding tests for state logic. Trigger it on any task that touches presentation logic, since updating state after disposal and over-broad rebuild scope are the two most common causes of crashes and jank in an otherwise correct implementation.
+description: "State-management conventions — state shape, safe updates after an await, narrow rebuild scope, and the test pattern — resolved against whichever stack the project uses: Bloc, Cubit, Riverpod, Provider, signals, or plain setState. Use this whenever writing or modifying any Cubit, Bloc, Notifier, provider, or state class, whenever wiring a widget to state, whenever a rebuild or setState question comes up, and whenever adding tests for state logic. Trigger it on any task that touches presentation logic, since updating state after disposal and over-broad rebuild scope are the two most common causes of crashes and jank in an otherwise correct implementation."
 ---
 
 # State Management
 
-> **Profile first.** Read `.claude/flutter-profile.yaml` in the project root and take the
+> **Profile first.** Read `.agents/flutter-profile.yaml` in the project root, falling
+> back to legacy `.claude/flutter-profile.yaml`, and take the
 > stack from `state`. With no profile, assume `state: bloc`, `models: freezed`.
 > Then read the reference for that stack before writing code:
 >
@@ -19,7 +20,7 @@ description: State-management conventions — state shape, safe updates after an
 > know is the single most damaging thing an agent does to a state layer: it compiles, it
 > works on the screen it was added to, and it leaves the project with two sources of truth
 > that no reviewer asked for. Field list:
-> `${CLAUDE_PLUGIN_ROOT}/skills/architecture/references/flutter-profile.md`.
+> `../architecture/references/flutter-profile.md`, relative to this skill directory.
 
 The four rules below hold under every stack. The references only differ in what the code
 for them looks like.

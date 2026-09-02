@@ -5,7 +5,8 @@ description: Enforces that every color, spacing value, radius, shadow, duration,
 
 # Design Tokens
 
-> **Profile first.** Read `.claude/flutter-profile.yaml` in the project root. `tokens`
+> **Profile first.** Read `.agents/flutter-profile.yaml` in the project root, falling
+> back to legacy `.claude/flutter-profile.yaml`. `tokens`
 > decides whether this skill applies at all: `theme_extension` (the default, everything
 > below holds), `theme_only` — resolve through `Theme.of(context)` and its `ColorScheme`
 > and `TextTheme` instead of `context.tokens`, `constants` — resolve through the project's

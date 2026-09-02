@@ -28,12 +28,16 @@ jobs:
       - name: Syntax check
         run: |
           bash -n install.sh
+          bash -n scripts/test_install_sh.sh
           bash -n plugins/flutter-code-quality/skills/review-gate/scripts/check.sh
       - name: shellcheck
         run: |
           shellcheck --severity=warning \
             install.sh \
+            scripts/test_install_sh.sh \
             plugins/flutter-code-quality/skills/review-gate/scripts/check.sh
+      - name: Installer behaves
+        run: bash scripts/test_install_sh.sh
 
   python:
     name: Python scripts

@@ -29,17 +29,17 @@ design that was updated after the export.
 flutter test integration_test/screenshot_test.dart --dart-define=CAPTURE=true
 
 # Diff against the reference
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/visual-verification/scripts/compare.py" \
+python3 "<skill-directory>/scripts/compare.py" \
   --actual build/screenshots/login_screen.png \
   --expected design/exports/login_screen.png \
   --output build/screenshots/login_screen_diff.png \
   --threshold 0.02
 ```
 
-`CLAUDE_PLUGIN_ROOT` is set by Claude Code and expands on its own; it does not need
-resolving by hand. If the skill was vendored by `install.sh` rather than installed as a
-plugin, that variable is unset — use `.claude/skills/visual-verification/scripts/compare.py`
-instead (this one is project-scoped, so it is never under `$HOME`).
+Resolve `<skill-directory>` from the loaded `SKILL.md` path, then run the bundled script
+from its `scripts/` directory. Do not copy or reimplement it. For a project-vendored
+Codex install, the path is `.agents/skills/visual-verification`; legacy Claude vendoring
+uses `.claude/skills/visual-verification`.
 
 The comparison logic lives in a script rather than in prose so it executes without
 loading into context. Anything deterministic belongs in a script — prose describing a

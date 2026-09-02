@@ -1,0 +1,32 @@
+{
+  "name": "flutter-craft-skills",
+  "interface": {
+    "displayName": "Flutter Craft Skills"
+  },
+  "plugins": [
+    {
+      "name": "flutter-design-fidelity",
+      "source": {
+        "source": "local",
+        "path": "./plugins/flutter-design-fidelity"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    },
+    {
+      "name": "flutter-code-quality",
+      "source": {
+        "source": "local",
+        "path": "./plugins/flutter-code-quality"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

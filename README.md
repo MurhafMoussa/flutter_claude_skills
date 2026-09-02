@@ -1,9 +1,9 @@
-# Flutter Skills for Claude Code
+# Flutter Craft Skills
 
-Eleven Agent Skills for production Flutter work, packaged as an installable plugin
-marketplace. They teach Claude Code the conventions that normally live in three senior
-developers' heads: design tokens instead of hardcoded values, a verification loop instead
-of a single render, and the RTL and accessibility requirements no design file ever
+Twelve Agent Skills for production Flutter work, packaged as installable plugins for
+Claude Code and Codex. They teach coding agents the conventions that normally live in
+three senior developers' heads: design tokens instead of hardcoded values, a verification
+loop instead of a single render, and the RTL and accessibility requirements no design file ever
 specifies.
 
 They adapt to your codebase rather than imposing one. A nine-line project profile records
@@ -13,10 +13,12 @@ generated code reuses what you have instead of building a second copy of it.
 
 ## Install
 
+### Claude Code
+
 ```
-/plugin marketplace add draz26648/flutter_claude_skills
-/plugin install flutter-design-fidelity@draz-flutter
-/plugin install flutter-code-quality@draz-flutter
+/plugin marketplace add draz26648/flutter-craft-skills
+/plugin install flutter-design-fidelity@flutter-craft-skills
+/plugin install flutter-code-quality@flutter-craft-skills
 /reload-plugins
 ```
 
@@ -26,36 +28,52 @@ Then, once, from your project root:
 /flutter-code-quality:flutter-adapt
 ```
 
-That writes two files — `.claude/flutter-profile.yaml` and
-`.claude/flutter-conventions.md` — which is how the skills learn your codebase instead of
+### Codex
+
+```bash
+codex plugin marketplace add draz26648/flutter-craft-skills
+codex plugin add flutter-design-fidelity@flutter-craft-skills
+codex plugin add flutter-code-quality@flutter-craft-skills
+```
+
+Then start Codex in the Flutter project and invoke:
+
+```
+$flutter-adapt
+```
+
+That writes two files — `.agents/flutter-profile.yaml` and
+`.agents/flutter-conventions.md` — which is how the skills learn your codebase instead of
 assuming mine. See [Your stack, not mine](#your-stack-not-mine) and
 [Your components, not new ones](#your-components-not-new-ones).
 
-Or from the terminal:
+The same Claude Code install from a terminal is:
 
 ```bash
-claude plugin marketplace add draz26648/flutter_claude_skills
-claude plugin install flutter-design-fidelity@draz-flutter
-claude plugin install flutter-code-quality@draz-flutter
+claude plugin marketplace add draz26648/flutter-craft-skills
+claude plugin install flutter-design-fidelity@flutter-craft-skills
+claude plugin install flutter-code-quality@flutter-craft-skills
 ```
 
 Two plugins rather than one because the design-fidelity four are substantially more
-useful with the Figma MCP server connected, and the quality six need nothing at all.
-No reason to make you take both.
+useful with a connected Figma tool, and the quality skills need nothing beyond the local
+Flutter toolchain. No reason to make you take both.
 
 ## How these actually work
 
-A skill is a folder with a `SKILL.md` inside. Claude loads only the `description` field
+A skill is a folder with a `SKILL.md` inside. The host loads only the `description` field
 at startup, then loads the full body when it decides the skill is relevant to what you
 just asked. You don't invoke them — you say "build the login screen from this Figma
 frame" and the relevant skills pull themselves in.
 
-You *can* run one by hand. Plugin skills are namespaced by plugin name:
+You *can* run one by hand. Claude Code plugin skills are namespaced by plugin name:
 
 ```
 /flutter-design-fidelity:design-tokens
 /flutter-code-quality:review-gate
 ```
+
+In Codex, mention the same skills with `$design-tokens`, `$review-gate`, and so on.
 
 Most of the value is in the automatic path. Manual invocation is for when you want a
 specific audit on demand, like running the review gate before a PR.
@@ -67,7 +85,7 @@ that is wrong about the codebase loses every argument it has with the developer,
 project gets to state which opinions apply:
 
 ```yaml
-# .claude/flutter-profile.yaml
+# .agents/flutter-profile.yaml
 state: riverpod          # bloc | riverpod | provider | signals | setstate
 models: freezed          # freezed | dart_mappable | json_serializable | manual
 structure: feature_first # feature_first | layer_first
@@ -79,7 +97,8 @@ locales: [en, ar]
 strictness: block        # block | warn
 ```
 
-`/flutter-adapt` generates it by reading `pubspec.yaml` and `lib/`. Every field defaults
+`$flutter-adapt` in Codex or `/flutter-code-quality:flutter-adapt` in Claude Code
+generates it by reading `pubspec.yaml` and `lib/`. Every field defaults
 to what the skills already assumed, so a project that agrees with them needs no file and
 sees no change.
 
@@ -100,11 +119,11 @@ with nothing in the output to say so.
 
 ## Your components, not new ones
 
-The profile records decisions. `.claude/flutter-conventions.md` records what your code
+The profile records decisions. `.agents/flutter-conventions.md` records what your code
 actually does — where the shared widgets live, which class owns typography, which asset
 directories are declared, whether routed widgets are `*Page` or `*Screen`.
 
-`/flutter-adapt` generates it too. It's read by the `codebase-conventions` skill on every
+`flutter-adapt` generates it too. It's read by the `codebase-conventions` skill on every
 code-writing task, and it exists because of one specific failure:
 
 > An agent greps for `PrimaryButton`, finds nothing, and builds one. The project already
@@ -136,7 +155,7 @@ Enforces one rule without exception: no raw visual values in widget code. Everyt
 resolves through an `AppTokens` ThemeExtension.
 
 ```dart
-// What Claude produces without the skill
+// What an agent produces without the skill
 Container(
   padding: const EdgeInsets.all(16),
   decoration: BoxDecoration(
@@ -254,7 +273,8 @@ than CI.
 
 # flutter-code-quality
 
-Seven skills covering structure, robustness, and the gate.
+Seven engineering skills covering structure, robustness, and the gate, plus the
+`flutter-adapt` setup skill.
 
 ## architecture
 
@@ -423,8 +443,8 @@ profile in profile mode — debug-mode numbers are meaningless.
 **Triggers on:** finishing a task, preparing a commit, opening a PR, asking whether
 something is ready to merge.
 
-Formatting, static analysis with `--fatal-infos`, forbidden-pattern grep, tests,
-coverage. One design decision makes it worth having:
+Formatting, static analysis with `--fatal-infos`, forbidden-pattern grep, and tests. One
+design decision makes it worth having:
 
 ```yaml
 allowed-tools: Read, Grep, Glob, Bash
@@ -444,7 +464,8 @@ Reports in three groups: blocking, worth fixing, notes. With the instruction tha
 nothing is blocking it should say so plainly rather than manufacturing findings — a gate
 that always reports problems teaches people to ignore it.
 
-It reads `.claude/flutter-profile.yaml` on its own and prints which profile it applied. A
+It reads `.agents/flutter-profile.yaml` on its own, falls back to an existing legacy
+`.claude/flutter-profile.yaml`, and prints which profile it applied. A
 check the profile switches off prints as *skipped*, with the setting responsible — a check
 that vanishes without explanation is indistinguishable from one that passed, which is the
 bug the 2.0.0 release existed to fix.
@@ -457,18 +478,18 @@ The profile covers the decisions that recur across projects. It will not cover a
 home-grown DI container, a custom navigation wrapper, or a token layer with two competing
 entry points — and a skill that is wrong about those still loses the argument.
 
-For divergence that deep, fork. Installed plugins live in `~/.claude/plugins/cache/` and
-are overwritten on update, so editing them in place does not survive; fork the repo,
-adjust the `SKILL.md` files, and point the marketplace at your copy:
+For divergence that deep, fork. Installed plugin caches are overwritten on update, so
+editing them in place does not survive; fork the repo, adjust the `SKILL.md` files, and
+point your host's marketplace at your copy.
 
 ```
-/plugin marketplace add your-username/flutter_claude_skills
+/plugin marketplace add your-username/flutter-craft-skills
 ```
 
 The fastest way to work out whether you need that is to ask. From your project root:
 
 > Read the installed flutter-code-quality and flutter-design-fidelity skills and my
-> `.claude/flutter-profile.yaml`. Inspect this codebase — pubspec.yaml,
+> `.agents/flutter-profile.yaml`. Inspect this codebase — pubspec.yaml,
 > analysis_options.yaml, the lib/ structure, the theme setup, and three representative
 > widgets. Tell me where the skills' conventions still differ from what this project
 > actually does after the profile is applied, and which of those the profile has no field
@@ -478,7 +499,7 @@ The fastest way to work out whether you need that is to ask. From your project r
 
 `figma-to-widget` and `visual-verification` are substantially more useful with the
 [Figma MCP server](https://help.figma.com/hc/en-us/articles/39888612464151) connected,
-which gives Claude structured access to real design values — actual color tokens, actual
+which gives the agent structured access to real design values — actual color tokens, actual
 spacing numbers — instead of reading a rasterized screenshot. It requires a paid Figma
 Dev or Full seat.
 
@@ -492,21 +513,26 @@ If you'd rather vendor the skills into a single project and commit them to git �
 makes them reviewable in pull requests alongside the code they govern:
 
 ```bash
-git clone https://github.com/draz26648/flutter_claude_skills.git
-cd flutter_claude_skills
+git clone https://github.com/draz26648/flutter-craft-skills.git
+cd flutter-craft-skills
 ./install.sh --project ~/path/to/your/flutter-app
 ```
 
-That copies the nine project-scoped skills into `<project>/.claude/skills/`, the two
-machine-scoped ones (`performance`, `review-gate`) into `~/.claude/skills/`, and
-`/flutter-adapt` into `<project>/.claude/commands/`. Restart Claude Code once after
-creating a `.claude/skills` directory that didn't exist when the session started; after
-that, edits are picked up live.
+The default remains Claude Code for backward compatibility. Pass `--codex` to use
+`<project>/.agents/skills/` and `~/.agents/skills/`, or `--both` to install both:
 
-`${CLAUDE_PLUGIN_ROOT}` is unset outside a plugin install, so the installer also gives
-each vendored skill its own copy of the profile spec and rewrites the cross-skill link to
-point at it. Without that the links resolve to nothing, which is the same failure the old
-`$SKILL_DIR` had.
+```bash
+./install.sh --codex --project ~/path/to/your/flutter-app
+./install.sh --both --project ~/path/to/your/flutter-app
+```
+
+The installer copies the ten project-scoped skills into the selected project directory
+and the two machine-scoped ones (`performance`, `review-gate`) into the selected personal
+directory. `flutter-adapt` is a skill in both hosts. Restart the host once if it does not
+notice a newly created skills directory; later edits are picked up automatically.
+
+The installer gives each vendored skill its own copy of the shared profile spec and
+rewrites cross-skill links to point at it, so every copied skill remains self-contained.
 
 Re-running the script leaves already-installed skills alone so local edits survive. To
 take a newer version, re-run with `--force` — and diff first if you've adapted them:
@@ -523,7 +549,7 @@ lives outside the repo.
 
 Before v1.0.0 this repo held skills in a top-level `skills/` directory, copied manually.
 Those copies still work and nothing breaks if you leave them — but they won't receive
-updates, and having both the vendored copies and the plugin installed means Claude sees
+updates, and having both the vendored copies and the plugin installed means the host sees
 each skill twice.
 
 To switch, remove the vendored copies first:
@@ -539,14 +565,15 @@ rm -rf ~/.claude/skills/performance ~/.claude/skills/review-gate
 
 Then install through the marketplace as above.
 
-## Why skills instead of CLAUDE.md
+## Why skills instead of one large instruction file
 
-`CLAUDE.md` loads on every session. As it grows, the rules near the bottom quietly stop
+Repository instructions such as `CLAUDE.md` or `AGENTS.md` load on every session. As
+they grow, the rules near the bottom quietly stop
 being followed, because everything loaded at startup competes for attention with
 everything else.
 
 Skills load in two stages. Only the `description` field sits in context at startup; the
-body loads when Claude decides the skill is relevant. Ten skills cost almost nothing
+body loads when the host decides the skill is relevant. Twelve skills cost almost nothing
 until one is needed, at which point you get the full document instead of a bullet point
 that survived summarization.
 
@@ -572,9 +599,11 @@ the difference.
 
 ```
 .claude-plugin/marketplace.json      the catalog Claude Code reads
+.agents/plugins/marketplace.json     the catalog Codex reads
 plugins/
   flutter-design-fidelity/
     .claude-plugin/plugin.json
+    .codex-plugin/plugin.json
     skills/design-tokens/SKILL.md
     skills/design-tokens/references/theme-extension-template.dart
     skills/design-tokens/references/flutter-profile.md      copy — kept identical by CI
@@ -584,7 +613,8 @@ plugins/
     skills/golden-tests/SKILL.md
   flutter-code-quality/
     .claude-plugin/plugin.json
-    commands/flutter-adapt.md
+    .codex-plugin/plugin.json
+    skills/flutter-adapt/SKILL.md
     skills/architecture/SKILL.md
     skills/architecture/references/flutter-profile.md       the profile spec
     skills/codebase-conventions/SKILL.md
@@ -607,9 +637,8 @@ mirror removed in 2.0.0 went stale precisely because nothing compared them.
 mirror — it existed before v1.0.0, drifted behind the plugin copies within a handful of
 commits, and was removed. Edit skills in `plugins/`; nothing else needs updating.
 
-Scripts inside a skill are addressed with `${CLAUDE_PLUGIN_ROOT}`, the environment
-variable Claude Code sets to the installed plugin's root. It expands on its own — a skill
-should never ask the model to work out its own path by hand.
+Scripts inside a skill are addressed relative to that skill's loaded `SKILL.md` path, so
+the same instructions work in a plugin, a repository install, or a personal install.
 
 Validate before pushing:
 
@@ -617,10 +646,11 @@ Validate before pushing:
 claude plugin validate .
 claude plugin validate ./plugins/flutter-design-fidelity
 claude plugin validate ./plugins/flutter-code-quality
+python3 scripts/validate.py
 ```
 
-Bump `version` in each `plugin.json` on every release. If the string doesn't change,
-Claude Code keeps the cached copy and existing users never see the update.
+Bump `version` in both hosts' plugin manifests on every release. If the string doesn't
+change, cached copies can prevent existing users from receiving the update.
 
 ## Contributing
 

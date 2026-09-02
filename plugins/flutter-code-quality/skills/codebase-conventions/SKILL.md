@@ -1,6 +1,6 @@
 ---
 name: codebase-conventions
-description: Makes generated code look like the code already in the repository — reuse the existing widget instead of building a second one, resolve typography and colours through the project's own source, reference only assets that exist and are declared, and match the file, class, and import naming already in use. Use this before writing any widget, any screen, any shared component, any Text style, and any asset reference, and whenever a task says "add a screen", "build a component", "make it match the rest of the app", or "use our design system". Trigger it on every code-writing task without waiting to be asked, because the default failure is invisible: the code compiles, looks reasonable in isolation, and quietly duplicates a component that already existed under a different name.
+description: "Makes generated code look like the code already in the repository — reuse the existing widget instead of building a second one, resolve typography and colours through the project's own source, reference only assets that exist and are declared, and match the file, class, and import naming already in use. Use this before writing any widget, any screen, any shared component, any Text style, and any asset reference, and whenever a task says \"add a screen\", \"build a component\", \"make it match the rest of the app\", or \"use our design system\". Trigger it on every code-writing task without waiting to be asked, because the default failure is invisible: the code compiles, looks reasonable in isolation, and quietly duplicates a component that already existed under a different name."
 ---
 
 # Codebase Conventions
@@ -12,9 +12,11 @@ called `AppButton` and nothing looked for it.
 Nothing in review catches this. The diff is all additions, every line is defensible, and
 the duplication only surfaces months later when a brand change has to be applied twice.
 
-> **Read the conventions file first.** `.claude/flutter-conventions.md` records where this
+> **Read the conventions file first.** `.agents/flutter-conventions.md` records where this
 > project keeps its shared widgets, typography, colours, and assets, and what its naming
-> rules are. Generate it with `/flutter-code-quality:flutter-adapt`.
+> rules are. If it is absent, check legacy `.claude/flutter-conventions.md`. Generate it
+> with the `flutter-adapt` skill (`$flutter-adapt` in Codex or
+> `/flutter-code-quality:flutter-adapt` in Claude Code).
 >
 > **If it does not exist, do the discovery below inline before writing code.** Do not skip
 > it because there is no file — the file is a cache of an answer you would otherwise have

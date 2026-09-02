@@ -5,13 +5,14 @@ description: Accessibility and right-to-left requirements that design files neve
 
 # Accessibility and RTL
 
-> **Profile first.** Read `.claude/flutter-profile.yaml` in the project root. `locales`
+> **Profile first.** Read `.agents/flutter-profile.yaml` in the project root, falling
+> back to legacy `.claude/flutter-profile.yaml` when needed. `locales`
 > sets how hard the RTL section below pushes: directional insets are better practice in
 > any project, but a project shipping an RTL locale (`ar`, `he`, `fa`, `ur`, `ps`, `sd`,
 > `ug`, `dv`, `yi`) has a visible bug rather than a habit, and there it blocks. `l10n:
 > none` suspends the hardcoded-string rule and nothing else — semantics, text scaling, and
 > touch targets apply to every project regardless. Field list:
-> `${CLAUDE_PLUGIN_ROOT}/skills/architecture/references/flutter-profile.md`.
+> `../architecture/references/flutter-profile.md`, relative to this skill directory.
 
 Design files are laid out left to right, at a fixed width, at default text scale, in one
 language. None of them specify what happens otherwise. That gap is the implementer's

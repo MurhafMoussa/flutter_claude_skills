@@ -6,11 +6,11 @@ allowed-tools: Read, Grep, Glob, Bash
 
 # Review Gate
 
-> **Profile first.** `check.sh` reads `.claude/flutter-profile.yaml` on its own and prints
-> which profile it applied. You do not need to pass anything — but read the file too, so
-> the judgement calls at the end of this skill are made against the same conventions the
-> script enforced. Field list:
-> `${CLAUDE_PLUGIN_ROOT}/skills/architecture/references/flutter-profile.md`.
+> **Profile first.** `check.sh` reads `.agents/flutter-profile.yaml` on its own, falling
+> back to legacy `.claude/flutter-profile.yaml`, and prints which profile it applied. You
+> do not need to pass anything — but read the file too, so the judgement calls at the end
+> of this skill are made against the same conventions the script enforced. Field list:
+> `../architecture/references/flutter-profile.md`, relative to this skill directory.
 
 This skill audits and reports. It does not fix. That restriction is deliberate: a gate
 with write access eventually satisfies its own checks by deleting the assertion that
@@ -25,16 +25,17 @@ Report findings, then let the developer decide.
 Run from the **project root** — the script reads `pubspec.yaml` and `git diff` there.
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/skills/review-gate/scripts/check.sh"
+bash "<skill-directory>/scripts/check.sh"
 ```
 
-`CLAUDE_PLUGIN_ROOT` is set by Claude Code and expands on its own; it does not need
-resolving by hand. If the skill was vendored by `install.sh` rather than installed as a
-plugin, that variable is unset — use whichever copy exists:
+Resolve `<skill-directory>` from the loaded `SKILL.md` path, then run the bundled script
+from its `scripts/` directory. Do not copy or reimplement it. Common vendored paths are:
 
 ```bash
-bash "$HOME/.claude/skills/review-gate/scripts/check.sh"   # --personal / --all-personal
-bash .claude/skills/review-gate/scripts/check.sh           # --project
+bash "$HOME/.agents/skills/review-gate/scripts/check.sh"  # Codex personal
+bash .agents/skills/review-gate/scripts/check.sh          # Codex project
+bash "$HOME/.claude/skills/review-gate/scripts/check.sh" # legacy Claude personal
+bash .claude/skills/review-gate/scripts/check.sh          # legacy Claude project
 ```
 
 Options: `--skip-tests` when you only want lint feedback, `--all` to audit all of `lib/`
@@ -91,7 +92,7 @@ checks. Raw colors and numbers are exactly what belongs in the token file. A gat
 fails on correct code gets switched off, so the carve-out is load-bearing rather than a
 convenience.
 
-**What the profile changes.** With no `.claude/flutter-profile.yaml` the list above is
+**What the profile changes.** With no project profile the list above is
 exactly what runs, so nothing changes for a project that never writes one. With a profile:
 
 | Setting | Effect |

@@ -4,13 +4,15 @@ Everything in these skills is an opinion about how a Flutter project is built. M
 those opinions are safe defaults. A few of them are wrong for your codebase, and a skill
 that is wrong about the codebase loses every argument it has with the developer.
 
-`.claude/flutter-profile.yaml` in the project root is how a project states which opinions
-apply to it.
+`.agents/flutter-profile.yaml` in the project root is how a project states which opinions
+apply to it. Existing `.claude/flutter-profile.yaml` files remain supported as a legacy
+fallback; when both exist, `.agents/flutter-profile.yaml` wins.
 
 ## Reading it
 
 Before applying any rule that names a package, a folder layout, or a severity, read
-`.claude/flutter-profile.yaml` from the project root.
+`.agents/flutter-profile.yaml` from the project root, then the legacy `.claude` path if
+the `.agents` file is absent.
 
 - **No file?** Use the defaults below. They are the conventions these skills shipped with,
   so a project that already agrees with them sees no change and needs no file.
@@ -69,7 +71,7 @@ any profile, because they are not matters of house style.
 ## Example
 
 ```yaml
-# .claude/flutter-profile.yaml
+# .agents/flutter-profile.yaml
 state: riverpod
 models: freezed
 structure: feature_first
@@ -84,10 +86,11 @@ strictness: block
 ## Generating one
 
 ```
-/flutter-code-quality:flutter-adapt
+$flutter-adapt
 ```
 
-It inspects `pubspec.yaml` and `lib/`, infers each field from what the code actually does,
+In Claude Code the namespaced invocation is `/flutter-code-quality:flutter-adapt`. It
+inspects `pubspec.yaml` and `lib/`, infers each field from what the code actually does,
 and reports what it could not determine rather than guessing. If only
 `flutter-design-fidelity` is installed, write the file by hand from the table above — it
 is nine lines.

@@ -1,0 +1,28 @@
+{
+  "name": "flutter-code-quality",
+  "version": "2.2.0",
+  "description": "Flutter architecture and quality conventions, adapted to your stack through a project profile. Covers layering, state management, responsive layout, accessibility, RTL, performance, codebase reuse, and a read-only pre-commit review gate.",
+  "author": {
+    "name": "Mohamed Draz",
+    "url": "https://github.com/draz26648"
+  },
+  "homepage": "https://github.com/draz26648/flutter-craft-skills",
+  "repository": "https://github.com/draz26648/flutter-craft-skills",
+  "license": "MIT",
+  "keywords": ["flutter", "bloc", "riverpod", "clean-architecture", "accessibility", "rtl"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Flutter Code Quality",
+    "shortDescription": "Architecture, accessibility, performance, and review workflows for Flutter.",
+    "longDescription": "Flutter engineering workflows that adapt to the project's stack and enforce architecture, state, responsive layout, accessibility, RTL, performance, reuse, and pre-commit quality checks.",
+    "developerName": "Mohamed Draz",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write", "Execute"],
+    "websiteURL": "https://github.com/draz26648/flutter-craft-skills",
+    "defaultPrompt": [
+      "Adapt the Flutter skills to this project.",
+      "Review this Flutter change before I commit.",
+      "Implement this feature using the project's conventions."
+    ]
+  }
+}
