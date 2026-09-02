@@ -6,8 +6,8 @@
     "name": "Mohamed Draz",
     "url": "https://github.com/draz26648"
   },
-  "homepage": "https://github.com/draz26648/flutter-craft-skills",
-  "repository": "https://github.com/draz26648/flutter-craft-skills",
+  "homepage": "https://github.com/draz26648/flutter_craft_skills",
+  "repository": "https://github.com/draz26648/flutter_craft_skills",
   "license": "MIT",
   "keywords": ["flutter", "figma", "design-tokens", "golden-tests"],
   "skills": "./skills/",
@@ -18,7 +18,7 @@
     "developerName": "Mohamed Draz",
     "category": "Developer Tools",
     "capabilities": ["Read", "Write", "Execute"],
-    "websiteURL": "https://github.com/draz26648/flutter-craft-skills",
+    "websiteURL": "https://github.com/draz26648/flutter_craft_skills",
     "defaultPrompt": [
       "Build this Flutter screen from the design.",
       "Check this Flutter UI against its reference.",

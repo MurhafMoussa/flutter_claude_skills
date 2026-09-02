@@ -16,7 +16,7 @@
         "name": "Mohamed Draz",
         "url": "https://github.com/draz26648"
       },
-      "homepage": "https://github.com/draz26648/flutter-craft-skills",
+      "homepage": "https://github.com/draz26648/flutter_craft_skills",
       "license": "MIT",
       "category": "design",
       "keywords": ["flutter", "figma", "design-tokens", "golden-tests"]
@@ -30,7 +30,7 @@
         "name": "Mohamed Draz",
         "url": "https://github.com/draz26648"
       },
-      "homepage": "https://github.com/draz26648/flutter-craft-skills",
+      "homepage": "https://github.com/draz26648/flutter_craft_skills",
       "license": "MIT",
       "category": "development",
       "keywords": ["flutter", "bloc", "riverpod", "clean-architecture", "accessibility", "rtl"]

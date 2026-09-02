@@ -16,7 +16,7 @@ generated code reuses what you have instead of building a second copy of it.
 ### Claude Code
 
 ```
-/plugin marketplace add draz26648/flutter-craft-skills
+/plugin marketplace add draz26648/flutter_craft_skills
 /plugin install flutter-design-fidelity@flutter-craft-skills
 /plugin install flutter-code-quality@flutter-craft-skills
 /reload-plugins
@@ -31,7 +31,7 @@ Then, once, from your project root:
 ### Codex
 
 ```bash
-codex plugin marketplace add draz26648/flutter-craft-skills
+codex plugin marketplace add draz26648/flutter_craft_skills
 codex plugin add flutter-design-fidelity@flutter-craft-skills
 codex plugin add flutter-code-quality@flutter-craft-skills
 ```
@@ -50,7 +50,7 @@ assuming mine. See [Your stack, not mine](#your-stack-not-mine) and
 The same Claude Code install from a terminal is:
 
 ```bash
-claude plugin marketplace add draz26648/flutter-craft-skills
+claude plugin marketplace add draz26648/flutter_craft_skills
 claude plugin install flutter-design-fidelity@flutter-craft-skills
 claude plugin install flutter-code-quality@flutter-craft-skills
 ```
@@ -483,7 +483,7 @@ editing them in place does not survive; fork the repo, adjust the `SKILL.md` fil
 point your host's marketplace at your copy.
 
 ```
-/plugin marketplace add your-username/flutter-craft-skills
+/plugin marketplace add your-username/flutter_craft_skills
 ```
 
 The fastest way to work out whether you need that is to ask. From your project root:
@@ -513,8 +513,8 @@ If you'd rather vendor the skills into a single project and commit them to git â
 makes them reviewable in pull requests alongside the code they govern:
 
 ```bash
-git clone https://github.com/draz26648/flutter-craft-skills.git
-cd flutter-craft-skills
+git clone https://github.com/draz26648/flutter_craft_skills.git
+cd flutter_craft_skills
 ./install.sh --project ~/path/to/your/flutter-app
 ```
 

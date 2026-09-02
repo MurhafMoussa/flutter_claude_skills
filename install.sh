@@ -3,12 +3,12 @@
 # as an alternative to installing through a Claude Code or Codex marketplace.
 #
 # Marketplace install (recommended):
-#   claude plugin marketplace add draz26648/flutter-craft-skills
+#   claude plugin marketplace add draz26648/flutter_craft_skills
 #   claude plugin install flutter-design-fidelity@flutter-craft-skills
 #   claude plugin install flutter-code-quality@flutter-craft-skills
 #
 # Codex marketplace install:
-#   codex plugin marketplace add draz26648/flutter-craft-skills
+#   codex plugin marketplace add draz26648/flutter_craft_skills
 #   codex plugin add flutter-design-fidelity@flutter-craft-skills
 #   codex plugin add flutter-code-quality@flutter-craft-skills
 
