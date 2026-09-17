@@ -36,9 +36,11 @@ takes longest to find.
 ```dart
 Future<void> refresh() async {
   state = const AsyncValue.loading();
-  state = await AsyncValue.guard(
+  final next = await AsyncValue.guard(
     () => ref.read(walletRepositoryProvider).fetchWallet(),
   );
+  if (!ref.mounted) return;
+  state = next;
 }
 ```
 
@@ -46,8 +48,10 @@ Future<void> refresh() async {
 exception, and it preserves the stack trace. A bare `try/catch` that assigns
 `AsyncValue.error(e, StackTrace.current)` loses the original trace.
 
-For a manual `await` outside `guard`, the liveness check (rule 2) is explicit — assigning
-`state` after disposal throws:
+`guard` does not make the `await` safe. Assigning `state` after disposal throws, so the
+liveness check (rule 2) sits between the `await` and the assignment — which is why the
+result goes into a local first rather than straight into `state`. The same holds for any
+other `await`:
 
 ```dart
 Future<void> submit(Transfer transfer) async {

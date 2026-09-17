@@ -24,11 +24,22 @@ DESCRIPTION_HARD_LIMIT = 1024
 DESCRIPTION_SOFT_LIMIT = 800
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
-# A skill may address its own resources or another skill bundled beside it. The latter is
-# localized by install.sh when skills are vendored independently.
+# A skill may address its own resources or another skill bundled beside it.
 RESOURCE_REF_RE = re.compile(
     r"(?<![A-Za-z0-9_.-])((?:\.\./[A-Za-z0-9_.-]+/)?(?:scripts|references)/[A-Za-z0-9_.-]+)"
 )
+
+# A `../` reference only resolves while the sibling skill is installed beside this one. The
+# plugins guarantee that; install.sh vendoring skills one by one does not, so it rewrites the
+# one cross-skill link it knows how to satisfy — the profile spec — into a local copy. Any
+# other `../` link would pass here and break on a vendored install. Keep this in step with
+# localise_profile_link in install.sh.
+LOCALISABLE_REF_RE = re.compile(r"\.\./[a-z0-9-]+/references/flutter-profile\.md")
+
+# Metadata a user reads when choosing a plugin. Every host shows its own copy, so a wording
+# fix made in one manifest and not the others means Claude Code and Codex users are shown
+# different plugins under the same name.
+SHARED_METADATA_KEYS = ("description", "keywords", "homepage", "license", "author")
 
 # Files deliberately duplicated across plugins, because each plugin has to work when it is
 # the only one installed. Duplication is only safe while something fails the build when the
@@ -101,7 +112,7 @@ def parse_frontmatter(path: Path) -> dict[str, str] | None:
     return fields
 
 
-def check_links(md: Path, body: str, skill_dir: Path | None, plugin_dir: Path) -> None:
+def check_links(md: Path, body: str, skill_dir: Path) -> None:
     """Every referenced script and reference file must exist, and be addressed portably."""
     if "$SKILL_DIR" in body:
         error(f"{rel(md)}: uses $SKILL_DIR, which is not a real variable")
@@ -111,25 +122,33 @@ def check_links(md: Path, body: str, skill_dir: Path | None, plugin_dir: Path) -
             "Resolve resources relative to the loaded SKILL.md path."
         )
 
-    if skill_dir is None:
-        return
     for ref in RESOURCE_REF_RE.findall(body):
         if not (skill_dir / ref).is_file():
             error(f"{rel(md)}: references '{ref}' which does not exist")
+        if ref.startswith("../") and not LOCALISABLE_REF_RE.fullmatch(ref):
+            error(
+                f"{rel(md)}: references '{ref}' in another skill. install.sh can only "
+                "localise ../<skill>/references/flutter-profile.md, so this link breaks "
+                "whenever skills are vendored one by one. Copy the file into this skill "
+                "or describe it in prose instead."
+            )
 
 
-def check_commands(plugin_dir: Path) -> None:
-    """Slash commands are a second entry point into the same plugin and rot the same way."""
+def check_no_commands(plugin_dir: Path) -> None:
+    """Plugin commands are Claude-only; the same capability as a skill reaches both hosts.
+
+    flutter-adapt started as a command and Codex users had no way to run it until it became
+    a skill. An empty commands/ directory is left alone — git does not track one, so it can
+    only be a leftover on somebody's machine, and it ships nothing.
+    """
     commands_dir = plugin_dir / "commands"
     if not commands_dir.is_dir():
         return
-    for cmd in sorted(commands_dir.glob("*.md")):
-        fields = parse_frontmatter(cmd)
-        if fields is None:
-            continue
-        if not fields.get("description"):
-            error(f"{rel(cmd)}: frontmatter has no 'description' — it will be unlabelled in /help")
-        check_links(cmd, cmd.read_text(encoding="utf-8"), None, plugin_dir)
+    for cmd in sorted(commands_dir.rglob("*.md")):
+        error(
+            f"{rel(cmd)}: plugin commands are Claude-only, so Codex users never get this. "
+            "Ship it as a skill instead, as flutter-adapt now is."
+        )
 
 
 def check_shared_copies() -> None:
@@ -147,7 +166,7 @@ def check_shared_copies() -> None:
                 )
 
 
-def check_skill(skill_dir: Path, plugin_dir: Path) -> str | None:
+def check_skill(skill_dir: Path) -> str | None:
     """Validate one skill directory. Returns its declared name, if any."""
     md = skill_dir / "SKILL.md"
     if not md.is_file():
@@ -177,7 +196,7 @@ def check_skill(skill_dir: Path, plugin_dir: Path) -> str | None:
         elif n > DESCRIPTION_SOFT_LIMIT:
             warn(f"{rel(md)}: description is {n} chars, over the {DESCRIPTION_SOFT_LIMIT} soft limit")
 
-    check_links(md, md.read_text(encoding="utf-8"), skill_dir, plugin_dir)
+    check_links(md, md.read_text(encoding="utf-8"), skill_dir)
 
     for script in (skill_dir / "scripts").glob("*"):
         if script.is_file() and script.suffix in {".sh", ".py"} and not script.stat().st_mode & 0o111:
@@ -279,7 +298,7 @@ def main() -> int:
     for entry in declared:
         pname = entry.get("name", "<unnamed>")
         source = entry.get("source", "")
-        plugin_dir = (ROOT / source.lstrip("./")).resolve() if source else None
+        plugin_dir = (ROOT / source.removeprefix("./")).resolve() if source else None
 
         if not plugin_dir or not plugin_dir.is_dir():
             error(f"marketplace.json: plugin '{pname}' source '{source}' does not exist")
@@ -308,6 +327,15 @@ def main() -> int:
             )
         if not manifest.get("version"):
             error(f"{rel(manifest_path)}: no version — users never receive updates without one")
+        # A marketplace entry need not repeat plugin.json's metadata, but whatever it does
+        # repeat is what the catalog shows before install, so it has to agree.
+        for key in SHARED_METADATA_KEYS:
+            if key in entry and entry[key] != manifest.get(key):
+                error(
+                    f"plugin '{pname}': marketplace.json '{key}' differs from "
+                    f"{rel(manifest_path)}. The catalog would describe a plugin that is "
+                    "not the one installed; keep the copies identical."
+                )
 
         codex_manifest_path = plugin_dir / ".codex-plugin" / "plugin.json"
         if not codex_manifest_path.is_file():
@@ -329,6 +357,14 @@ def main() -> int:
                         f"{codex_manifest.get('version')!r} but Claude version "
                         f"{manifest.get('version')!r}"
                     )
+                for key in SHARED_METADATA_KEYS:
+                    if codex_manifest.get(key) != manifest.get(key):
+                        error(
+                            f"plugin '{pname}': '{key}' in {rel(codex_manifest_path)} "
+                            f"differs from {rel(manifest_path)}. Codex and Claude Code users "
+                            "would be shown different plugins under one name; keep the "
+                            "copies identical."
+                        )
                 if codex_manifest.get("skills") != "./skills/":
                     error(f"{rel(codex_manifest_path)}: skills must point to './skills/'")
                 interface = codex_manifest.get("interface")
@@ -351,15 +387,15 @@ def main() -> int:
                             f"{', '.join(missing)}"
                         )
 
+        check_no_commands(plugin_dir)
+
         skills_dir = plugin_dir / "skills"
         if not skills_dir.is_dir():
             error(f"{rel(plugin_dir)}: no skills/ directory")
             continue
 
-        check_commands(plugin_dir)
-
         for skill_dir in sorted(p for p in skills_dir.iterdir() if p.is_dir()):
-            name = check_skill(skill_dir, plugin_dir)
+            name = check_skill(skill_dir)
             if name:
                 if name in all_skill_names:
                     error(
@@ -378,7 +414,7 @@ def main() -> int:
 
 
 def check_changelog(versions: set[str]) -> None:
-    """Every shipped version needs an entry.
+    """Every shipped version needs an entry, and the newest one goes on top.
 
     The README described a directory that did not exist and omitted one that did, for two
     releases running. Docs drift silently unless something fails the build, and the
@@ -391,10 +427,24 @@ def check_changelog(versions: set[str]) -> None:
         return
 
     text = path.read_text(encoding="utf-8")
-    headings = set(re.findall(r"^##\s+(\d+\.\d+\.\d+)\s*$", text, re.MULTILINE))
+    ordered = re.findall(r"^##\s+(\d+\.\d+\.\d+)\s*$", text, re.MULTILINE)
+    headings = set(ordered)
     for version in sorted(versions):
         if version not in headings:
             error(f"CHANGELOG.md has no '## {version}' entry for the current release")
+
+    # An entry existing somewhere is not enough. Readers take the top entry as the current
+    # release, so an entry filed below an older one, or a new entry written ahead of the
+    # manifest bump that ships it, misdescribes what users actually install. Versions that
+    # are not X.Y.Z can never have a heading and already failed above.
+    semver = [v for v in versions if re.fullmatch(r"\d+\.\d+\.\d+", v)]
+    if ordered and semver:
+        shipped = max(semver, key=lambda v: tuple(int(part) for part in v.split(".")))
+        if ordered[0] != shipped:
+            error(
+                f"CHANGELOG.md's first entry is '## {ordered[0]}' but the manifests ship "
+                f"{shipped}. The top entry must describe the version being shipped."
+            )
 
 
 def report() -> int:

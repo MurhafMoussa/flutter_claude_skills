@@ -37,9 +37,9 @@ python3 "<skill-directory>/scripts/compare.py" \
 ```
 
 Resolve `<skill-directory>` from the loaded `SKILL.md` path, then run the bundled script
-from its `scripts/` directory. Do not copy or reimplement it. For a project-vendored
-Codex install, the path is `.agents/skills/visual-verification`; legacy Claude vendoring
-uses `.claude/skills/visual-verification`.
+from its `scripts/` directory. Do not copy or reimplement it. A vendored install lives at
+`.claude/skills/visual-verification` (Claude Code) or `.agents/skills/visual-verification`
+(Codex) in the project, or at the same path under `~` for a personal install.
 
 The comparison logic lives in a script rather than in prose so it executes without
 loading into context. Anything deterministic belongs in a script — prose describing a

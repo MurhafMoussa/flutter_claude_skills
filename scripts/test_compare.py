@@ -128,6 +128,17 @@ def main() -> int:
     r = run("--actual", str(same), "--expected", str(ref_path), "--ignore-region", "junk")
     check(r.returncode == 2, "a malformed --ignore-region exits 2")
 
+    # Hide numpy from the script. Exiting 1 here would read as a failing screen.
+    without_numpy = (
+        "import runpy, sys; sys.modules['numpy'] = None; sys.argv = ['compare.py']; "
+        f"runpy.run_path({str(SCRIPT)!r}, run_name='__main__')"
+    )
+    hidden = subprocess.run(
+        [sys.executable, "-c", without_numpy], capture_output=True, text=True, check=False
+    )
+    check(hidden.returncode == 2, "missing dependencies exit 2, not 1", hidden.stderr[:200])
+    check("pip install" in hidden.stderr, "and say how to install them")
+
     print()
     if failures:
         print(f"{len(failures)} compare.py test(s) failed")

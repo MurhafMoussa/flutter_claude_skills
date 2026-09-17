@@ -14,9 +14,10 @@ the duplication only surfaces months later when a brand change has to be applied
 
 > **Read the conventions file first.** `.agents/flutter-conventions.md` records where this
 > project keeps its shared widgets, typography, colours, and assets, and what its naming
-> rules are. If it is absent, check legacy `.claude/flutter-conventions.md`. Generate it
-> with the `flutter-adapt` skill (`$flutter-adapt` in Codex or
-> `/flutter-code-quality:flutter-adapt` in Claude Code).
+> rules are. If it is absent, check `.claude/flutter-conventions.md`. The user generates it
+> with the `flutter-adapt` skill — `$flutter-adapt` in Codex; in Claude Code
+> `/flutter-code-quality:flutter-adapt` as a plugin or `/flutter-adapt` when vendored. It
+> only runs when the user invokes it, so suggest it rather than trying to run it.
 >
 > **If it does not exist, do the discovery below inline before writing code.** Do not skip
 > it because there is no file — the file is a cache of an answer you would otherwise have
