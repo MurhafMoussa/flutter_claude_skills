@@ -11,8 +11,8 @@ jobs:
     name: Skill and manifest structure
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Validate skills, manifests and marketplace
@@ -22,19 +22,21 @@ jobs:
     name: Shell scripts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Syntax check
         run: |
           bash -n install.sh
           bash -n scripts/test_install_sh.sh
+          bash -n scripts/test_check_sh.sh
           bash -n plugins/flutter-code-quality/skills/review-gate/scripts/check.sh
       - name: shellcheck
         run: |
-          shellcheck --severity=warning \
+          shellcheck \
             install.sh \
             scripts/test_install_sh.sh \
+            scripts/test_check_sh.sh \
             plugins/flutter-code-quality/skills/review-gate/scripts/check.sh
       - name: Installer behaves
         run: bash scripts/test_install_sh.sh
@@ -43,12 +45,12 @@ jobs:
     name: Python scripts
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Install tooling
-        run: pip install ruff pillow numpy
+        run: pip install ruff==0.16.5 pillow numpy
       - name: Lint
         run: ruff check scripts plugins
       - name: Compile
@@ -62,9 +64,10 @@ jobs:
     name: review-gate self-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.41.9
       - name: Run the gate against its fixture
         run: bash scripts/test_check_sh.sh

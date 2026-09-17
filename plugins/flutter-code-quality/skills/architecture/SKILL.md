@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: The layering rules for this Flutter codebase — feature-first structure, a pure Dart domain layer with no Flutter imports, Cubit or Bloc as the only bridge to presentation, and repositories behind interfaces. Use this whenever creating a new feature, adding any new file, deciding where code belongs, refactoring, or answering any question about project structure. Trigger it before writing the first file of any new feature, because a file placed in the wrong layer is far more expensive to move later than to place correctly now.
+description: The layering rules for this Flutter codebase — a pure Dart domain layer with no Flutter imports, the project's state holder (Cubit, Bloc, Notifier, or whatever the profile names) as the only bridge to presentation, repositories behind interfaces, and the feature-first or layer-first structure the profile declares. Use this whenever creating a new feature, adding any new file, deciding where code belongs, refactoring, or answering any question about project structure. Trigger it before writing the first file of any new feature, because a file placed in the wrong layer is far more expensive to move later than to place correctly now.
 ---
 
 # Architecture

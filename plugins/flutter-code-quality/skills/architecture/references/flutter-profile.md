@@ -89,7 +89,8 @@ strictness: block
 $flutter-adapt
 ```
 
-In Claude Code the namespaced invocation is `/flutter-code-quality:flutter-adapt`. It
+In Claude Code it is `/flutter-code-quality:flutter-adapt` when installed as a plugin, or
+`/flutter-adapt` when vendored with `install.sh`. It runs only when you invoke it. It
 inspects `pubspec.yaml` and `lib/`, infers each field from what the code actually does,
 and reports what it could not determine rather than guessing. If only
 `flutter-design-fidelity` is installed, write the file by hand from the table above — it

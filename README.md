@@ -78,6 +78,9 @@ In Codex, mention the same skills with `$design-tokens`, `$review-gate`, and so 
 Most of the value is in the automatic path. Manual invocation is for when you want a
 specific audit on demand, like running the review gate before a PR.
 
+The one exception is `flutter-adapt`. It writes files, so it never pulls itself in — it
+runs only when you invoke it.
+
 ## Your stack, not mine
 
 These skills hold opinions, and some of them will be wrong about your codebase. A skill
@@ -97,8 +100,9 @@ locales: [en, ar]
 strictness: block        # block | warn
 ```
 
-`$flutter-adapt` in Codex or `/flutter-code-quality:flutter-adapt` in Claude Code
-generates it by reading `pubspec.yaml` and `lib/`. Every field defaults
+`$flutter-adapt` in Codex, or `/flutter-code-quality:flutter-adapt` in Claude Code
+(`/flutter-adapt` if you vendored the skills with `install.sh`), generates it by reading
+`pubspec.yaml` and `lib/`. Every field defaults
 to what the skills already assumed, so a project that agrees with them needs no file and
 sees no change.
 
@@ -464,8 +468,9 @@ Reports in three groups: blocking, worth fixing, notes. With the instruction tha
 nothing is blocking it should say so plainly rather than manufacturing findings — a gate
 that always reports problems teaches people to ignore it.
 
-It reads `.agents/flutter-profile.yaml` on its own, falls back to an existing legacy
-`.claude/flutter-profile.yaml`, and prints which profile it applied. A
+It reads `.agents/flutter-profile.yaml` on its own, falls back to an existing
+`.claude/flutter-profile.yaml`, and prints which profile it applied. When both exist,
+`.agents/` wins and the report names the ignored `.claude/` file. A
 check the profile switches off prints as *skipped*, with the setting responsible — a check
 that vanishes without explanation is indistinguishable from one that passed, which is the
 bug the 2.0.0 release existed to fix.
@@ -528,8 +533,13 @@ The default remains Claude Code for backward compatibility. Pass `--codex` to us
 
 The installer copies the ten project-scoped skills into the selected project directory
 and the two machine-scoped ones (`performance`, `review-gate`) into the selected personal
-directory. `flutter-adapt` is a skill in both hosts. Restart the host once if it does not
-notice a newly created skills directory; later edits are picked up automatically.
+directory. `flutter-adapt` is a skill in both hosts; vendored skills are not namespaced,
+so in Claude Code it is `/flutter-adapt`. Restart the host once if it does not notice a
+newly created skills directory; later edits are picked up automatically.
+
+Instead of `--project`, `--personal` copies only the two machine-scoped skills to your
+personal directory, and `--all-personal` copies all twelve there. Give exactly one of the
+three.
 
 The installer gives each vendored skill its own copy of the shared profile spec and
 rewrites cross-skill links to point at it, so every copied skill remains self-contained.
@@ -544,6 +554,36 @@ take a newer version, re-run with `--force` — and diff first if you've adapted
 Trade-off: vendored skills only update when you ask them to, but they're visible in code
 review and can diverge per project. Marketplace install gets updates automatically but
 lives outside the repo.
+
+## Upgrading from 2.1.0
+
+Three things changed underneath existing installs.
+
+**The marketplace was renamed** from `draz-flutter` to `flutter-craft-skills`, following
+the repository rename. An existing Claude Code install keeps updating under the old name,
+so nothing is required. If you want the new name, remove the old marketplace first —
+adding the new one beside it installs every skill twice, and the host loads both copies.
+Removing a marketplace uninstalls its plugins, so reinstall straight after:
+
+```bash
+claude plugin marketplace remove draz-flutter
+claude plugin marketplace add draz26648/flutter_craft_skills
+claude plugin install flutter-design-fidelity@flutter-craft-skills
+claude plugin install flutter-code-quality@flutter-craft-skills
+```
+
+**`flutter-adapt` is a skill, not a command.** A marketplace update handles this. A 2.1.0
+vendored install left `.claude/commands/flutter-adapt.md` in the project (or
+`~/.claude/commands/` for a personal install), and that command still writes the old
+`.claude/` profile. Re-running `install.sh` with the same scope warns about it; adding
+`--force` removes it. Only the file 2.1.0 wrote is touched — a command of your own with
+that name is left alone.
+
+**Profile files moved to `.agents/`.** An existing `.claude/flutter-profile.yaml` and
+`.claude/flutter-conventions.md` keep working. If a project has a profile in both
+directories, `.agents/` wins and the `.claude/` one is ignored, which can change what the
+review gate blocks; the gate's report names the ignored file. Running `flutter-adapt`
+again offers to move the `.claude/` files so there is only one of each.
 
 ## Upgrading from the flat layout
 
@@ -615,6 +655,7 @@ plugins/
     .claude-plugin/plugin.json
     .codex-plugin/plugin.json
     skills/flutter-adapt/SKILL.md
+    skills/flutter-adapt/agents/openai.yaml                 Codex: explicit invocation only
     skills/architecture/SKILL.md
     skills/architecture/references/flutter-profile.md       the profile spec
     skills/codebase-conventions/SKILL.md
@@ -627,6 +668,8 @@ plugins/
     skills/review-gate/SKILL.md
     skills/review-gate/scripts/check.sh
 install.sh                           for vendoring into a project instead
+scripts/validate.py                  structure, manifest, link, and changelog checks
+scripts/test_*.sh, test_compare.py   behavioural tests for the three shipped scripts
 ```
 
 `flutter-profile.md` exists twice because each plugin has to work when it is the only one
@@ -649,8 +692,10 @@ claude plugin validate ./plugins/flutter-code-quality
 python3 scripts/validate.py
 ```
 
-Bump `version` in both hosts' plugin manifests on every release. If the string doesn't
-change, cached copies can prevent existing users from receiving the update.
+Bump `version` in both hosts' plugin manifests and in `.claude-plugin/marketplace.json`
+on every release, and put the matching entry at the top of `CHANGELOG.md` —
+`validate.py` fails the build otherwise. If the string doesn't change, cached copies can
+prevent existing users from receiving the update.
 
 ## Contributing
 

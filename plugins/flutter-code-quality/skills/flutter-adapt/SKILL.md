@@ -1,7 +1,8 @@
 ---
 name: flutter-adapt
-description: Inspect a Flutter project and generate its agent profile and codebase conventions so the Flutter skills follow the project's actual stack, structure, components, tokens, assets, and naming. Use this when installing these skills in a project, when the project's architecture or conventions change, or when asked to adapt the skills to an existing Flutter codebase.
+description: Inspect a Flutter project and generate its agent profile and codebase conventions so the Flutter skills follow the project's actual stack, structure, components, tokens, assets, and naming. Run it only when the user explicitly asks to adapt the Flutter skills to this project or to regenerate the profile — it writes files, so it is never started on the agent's own initiative.
 allowed-tools: Read, Grep, Glob, Bash, Write
+disable-model-invocation: true
 ---
 
 # Adapt the skills to this project
@@ -33,10 +34,18 @@ and marked `# UNCERTAIN`, with what you would need to resolve it. A confidently 
 profile is worse than no profile, because the skills then enforce the wrong conventions
 with no sign anything is off.
 
-**Never overwrite silently.** If `.agents/flutter-profile.yaml` or the legacy
-`.claude/flutter-profile.yaml` already exists, read it, show a diff of what you would
-change and why, and ask before writing. Write new profiles to `.agents/`; do not create a
-second copy when a legacy profile already exists unless the user explicitly asks to migrate it.
+**Never overwrite silently.** Whatever file you are about to change, read it first, show a
+diff of what you would change and why, and ask before writing. Where the result goes
+depends on what already exists:
+
+| Already there | Write to |
+|---|---|
+| Neither file | `.agents/flutter-profile.yaml` |
+| Only `.claude/flutter-profile.yaml` | Update it in place. Offer to move it — and `.claude/flutter-conventions.md` with it — to `.agents/`, and move both only if the user agrees. Never leave a copy in each directory. |
+| Both | Update `.agents/flutter-profile.yaml`, and tell the user the `.claude/` copy is ignored: the review gate and every skill read `.agents/` first. Offer to delete the `.claude/` copy. |
+
+Two profiles that disagree are worse than either one, because which of them applies
+depends on a lookup order nobody remembers.
 
 **Do not change any other file.** Not `pubspec.yaml`, not `analysis_options.yaml`, not
 the code. This skill describes the project; it does not reform it.
@@ -175,6 +184,6 @@ list gets trusted. Search live; this tells you where to search.
 Keep it under about 60 lines. It is read on every code-writing task, and a long file gets
 skimmed exactly where the specifics are.
 
-If `.agents/flutter-conventions.md` or the legacy `.claude/flutter-conventions.md` already
-exists, diff and ask before overwriting, the same as the profile. Keep both generated
-files in the same directory.
+If `.agents/flutter-conventions.md` or `.claude/flutter-conventions.md` already exists,
+diff and ask before overwriting, and choose the directory by the same table as the
+profile. Keep both generated files in the same directory.

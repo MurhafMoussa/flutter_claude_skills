@@ -204,6 +204,8 @@ write_profile 'tokens: theme_extension'
 PREFERRED_OUT="$(run_profiled)"
 expect_contains "$PREFERRED_OUT" ".agents/flutter-profile.yaml" ".agents profile takes precedence"
 expect_contains "$PREFERRED_OUT" "FAIL: no hardcoded colors" ".agents profile controls the verdict"
+expect_contains "$PREFERRED_OUT" ".claude/flutter-profile.yaml is ignored" "the losing .claude profile is named"
+expect_absent   "$LEGACY_OUT" "is ignored because" "a lone .claude profile is not reported as ignored"
 rm -rf "$PP/.claude"
 
 # tokens: none — the project has no token layer, so the token checks have nothing to
@@ -261,6 +263,13 @@ BAD_OUT="$(run_profiled)"
 expect_exit "$(code_profiled)" 2 "an unrecognised profile value exits 2"
 expect_contains "$BAD_OUT" "is not a recognised value" "and names the offending field"
 expect_absent   "$BAD_OUT" "=== Summary ===" "and does not go on to report on the code"
+
+# Same for a mistyped path: falling back to the defaults would exit 0 on conventions the
+# project never asked for.
+MISSING_OUT="$( cd "$PP" && bash "$GATE" --skip-tests --profile .agents/flutter-profle.yaml 2>&1 )"
+MISSING_CODE="$( cd "$PP" && bash "$GATE" --skip-tests --profile .agents/flutter-profle.yaml >/dev/null 2>&1; echo $? )"
+expect_exit "$MISSING_CODE" 2 "an explicit --profile that does not exist exits 2"
+expect_contains "$MISSING_OUT" "does not exist" "and says the file is missing"
 
 rm -rf "$PP/.agents"
 

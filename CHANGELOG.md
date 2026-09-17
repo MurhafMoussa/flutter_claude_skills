@@ -11,8 +11,12 @@ the project changed — the gate's verdict is the contract.
 
 ## 2.2.0
 
-Additive Codex support. The eleven existing Flutter guidance skills keep their behavior;
-`flutter-adapt` moves from a Claude-only command to a twelfth, portable skill.
+Codex support, additive. A project that passed the review gate under 2.1.0 still passes.
+The two ways to get a different result both need a misconfiguration first: a `--profile`
+path that does not exist, and a project holding a profile in both `.agents/` and
+`.claude/`. Both are described below. Existing installs need a look before upgrading —
+the marketplace was renamed, and a vendored 2.1.0 install leaves a stale command behind.
+The README's "Upgrading from 2.1.0" section covers both.
 
 ### Added
 
@@ -22,18 +26,80 @@ Additive Codex support. The eleven existing Flutter guidance skills keep their b
   Codex together. Codex project skills land in `.agents/skills` and personal skills in
   `~/.agents/skills`.
 - Validation for Codex manifests, marketplace entries, and provider-neutral skill links.
+- **`review-gate` names an ignored profile.** When `.agents/flutter-profile.yaml` and
+  `.claude/flutter-profile.yaml` both exist, the report notes that the `.claude/` one was
+  ignored. Two profiles that disagree used to be resolved by lookup order with nothing in
+  the output to say so.
+- `review-gate` documents two limits of its diff scope: a new file that was never
+  `git add`-ed is not scanned, and an app in a subdirectory of its repository falls back
+  to scanning everything. Both are fixed properly in 3.0.0, since scanning more files
+  surfaces findings on projects that pass today.
+- `validate.py` now fails the build when the Claude and Codex manifests or the marketplace
+  entries disagree on description, keywords, homepage, license, or author; when the top
+  `CHANGELOG.md` entry is not the version being shipped; when a skill links to another
+  skill's file that `install.sh` cannot localise; and when a plugin ships a `commands/`
+  file, which Codex would never see.
+- An "Upgrading from 2.1.0" section in the README.
 
 ### Changed
 
 - The suite and both marketplace catalogs now use the provider-neutral
-  `flutter-craft-skills` name, matching the renamed GitHub repository.
-- `flutter-adapt` is now a normal skill, so Codex invokes it as `$flutter-adapt` while the
-  existing Claude Code invocation remains `/flutter-code-quality:flutter-adapt`.
+  `flutter-craft-skills` name, following the GitHub repository's rename to
+  `flutter_craft_skills`. An existing `draz-flutter` install keeps updating under its old
+  name. Adding the new marketplace beside it installs every skill twice — remove the old
+  one first.
+- **`flutter-adapt` is now a skill rather than a command,** so Codex invokes it as
+  `$flutter-adapt`. In Claude Code it is `/flutter-code-quality:flutter-adapt` from the
+  plugin and `/flutter-adapt` when vendored. It still runs only when invoked
+  (`disable-model-invocation: true` for Claude Code, `allow_implicit_invocation: false` in
+  `agents/openai.yaml` for Codex): as a plain skill with `Write` in its tools, an agent
+  could otherwise have started it mid-refactor and written files nobody asked for.
 - New profiles and convention maps use `.agents/flutter-profile.yaml` and
   `.agents/flutter-conventions.md`. Existing `.claude/` files remain a supported fallback,
-  and the review gate prefers `.agents/` when both exist.
+  and the review gate prefers `.agents/` when both exist. `flutter-adapt` now says exactly
+  where it writes in each case — only `.claude/` files exist, both exist, neither — and
+  offers to move the `.claude/` pair rather than leaving one of each.
 - Bundled scripts and cross-skill references resolve relative to the loaded skill instead
   of relying on the Claude-only `CLAUDE_PLUGIN_ROOT` environment variable.
+- `install.sh` takes exactly one of `--project`, `--personal`, and `--all-personal`, and
+  exits `1` when given more. It used to take one and silently drop the rest, installing
+  somewhere the user had not asked for.
+- `install.sh` prints the invocation that works for what it installed — `/flutter-adapt`
+  for a vendored Claude Code install — and only when it installed `flutter-adapt`.
+- `install.sh` finds the `flutter-adapt` command a 2.1.0 install left in
+  `.claude/commands/`, warns about it, and removes it under `--force`. It only touches a
+  file carrying that command's own text.
+- CI: `actions/checkout` and `actions/setup-python` move to v7, Flutter is pinned to
+  3.41.9 and ruff to 0.16.5, and shellcheck now runs at its default severity over all four
+  shell scripts, including `test_check_sh.sh`.
+
+### Removed
+
+- `plugins/flutter-code-quality/commands/flutter-adapt.md`, replaced by the
+  `flutter-adapt` skill.
+
+### Fixed
+
+- **`compare.py` exited `1` when Pillow or numpy was missing.** `1` means "the screen
+  differs", so an agent that had not installed the dependencies went off to change widget
+  code. It exits `2`, "could not run", like every other failure to compare.
+- **`check.sh --profile` with a path that does not exist used the defaults** and could
+  exit `0` on conventions the project never asked for. It exits `2`, the same as an
+  unrecognised profile value.
+- **`install.sh` could not install from a path containing a space**, and `--project` with
+  no path died on `unbound variable`. It also copied untracked `__pycache__` directories
+  into installed skills.
+- **`state-management` gave wrong advice in three places.** It told `provider` users to
+  check `mounted` on a `ChangeNotifier`, which has no such property. It said every stack
+  deduplicates equal states, which `setState` and `ChangeNotifier` do not. And the Riverpod
+  `refresh()` example assigned `state` straight after an `await`, breaking its own rule 2.
+- **`review-gate` listed a check the script does not run** — tests for new Cubit methods.
+  That is a judgement call, and it now sits with the other judgement calls, for any state
+  holder rather than only a Cubit.
+- **`architecture`'s description** still said "Cubit or Bloc as the only bridge" and
+  "feature-first" after the profile made both configurable.
+- `.claude/skills` was called "legacy" in `review-gate` and `visual-verification`; it is
+  where `install.sh` puts Claude Code skills by default.
 
 ## 2.1.0
 

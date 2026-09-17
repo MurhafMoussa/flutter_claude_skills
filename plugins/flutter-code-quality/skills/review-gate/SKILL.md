@@ -7,7 +7,7 @@ allowed-tools: Read, Grep, Glob, Bash
 # Review Gate
 
 > **Profile first.** `check.sh` reads `.agents/flutter-profile.yaml` on its own, falling
-> back to legacy `.claude/flutter-profile.yaml`, and prints which profile it applied. You
+> back to `.claude/flutter-profile.yaml`, and prints which profile it applied. You
 > do not need to pass anything — but read the file too, so the judgement calls at the end
 > of this skill are made against the same conventions the script enforced. Field list:
 > `../architecture/references/flutter-profile.md`, relative to this skill directory.
@@ -32,14 +32,16 @@ Resolve `<skill-directory>` from the loaded `SKILL.md` path, then run the bundle
 from its `scripts/` directory. Do not copy or reimplement it. Common vendored paths are:
 
 ```bash
+bash "$HOME/.claude/skills/review-gate/scripts/check.sh"  # Claude Code personal
+bash .claude/skills/review-gate/scripts/check.sh          # Claude Code project
 bash "$HOME/.agents/skills/review-gate/scripts/check.sh"  # Codex personal
 bash .agents/skills/review-gate/scripts/check.sh          # Codex project
-bash "$HOME/.claude/skills/review-gate/scripts/check.sh" # legacy Claude personal
-bash .claude/skills/review-gate/scripts/check.sh          # legacy Claude project
 ```
 
 Options: `--skip-tests` when you only want lint feedback, `--all` to audit all of `lib/`
-and `test/` instead of just what changed.
+and `test/` instead of just what changed, `--profile PATH` to read a profile somewhere
+other than `.agents/` or `.claude/`. A `--profile` path that does not exist exits `2`
+rather than falling back to the defaults.
 
 Exit codes: `0` nothing blocking, `1` at least one blocking finding, `2` the gate could
 not run. **A `2` is not a pass.** It means a precondition failed or a check itself broke,
@@ -111,9 +113,8 @@ A skipped check is reported as skipped, with the profile setting that caused it.
 never silently omitted: a check that vanishes without explanation is indistinguishable
 from a check that passed, which is the failure mode 2.0.0 existed to fix.
 
-**Tests.** `flutter test` passes, and failures are named in the report. New public methods
-on a Cubit have tests covering both the success and the failure path. Changed golden PNGs
-are flagged explicitly, since they are the easiest thing to approve without looking.
+**Tests.** `flutter test` passes, and failures are named in the report. Changed golden
+PNGs are flagged explicitly, since they are the easiest thing to approve without looking.
 
 **Dependencies.** New entries in `pubspec.yaml` are flagged. Each needs a note on why, and
 a check that the functionality does not already exist in the codebase or the SDK.
@@ -122,7 +123,8 @@ a check that the functionality does not already exist in the codebase or the SDK
 
 The script finds mechanical violations. These need reading the diff:
 
-- Whether a new Cubit method's tests cover the failure path, not just that tests exist.
+- Whether a new public method on a state holder — Cubit, Bloc, Notifier — has tests for
+  both the success and the failure path, not just that tests exist.
 - Whether a changed golden was actually reviewed, or just regenerated until green.
 - Whether a force-unwrap's justifying comment is true.
 - Whether a new dependency was necessary.
@@ -154,3 +156,12 @@ The pattern checks confine themselves to Dart files changed against `HEAD`, so t
 tracks the current change rather than the whole codebase. Analysis and tests are
 whole-project because they have to be. When the report cites a file the change did not
 touch, that is analysis or tests talking, and it still needs fixing.
+
+Two limits of that scope, both worth knowing before trusting a clean report:
+
+- **A new file that was never `git add`-ed is not scanned.** `git diff HEAD` does not list
+  untracked files. Stage new files before running the gate, or pass `--all`.
+- **An app in a subdirectory of its repository gets no diff scope.** `git` reports changed
+  paths relative to the repository root, which do not resolve from the app directory, so
+  the gate falls back to scanning all of `lib/` and `test/` and labels the scope "nothing
+  changed against HEAD". In that layout, read the label as "the diff could not be used".

@@ -22,7 +22,10 @@ try:
     import numpy as np
     from PIL import Image
 except ImportError:
-    sys.exit("Install dependencies first: pip install pillow numpy")
+    # Exit 2, not sys.exit("..."), which exits 1: a 1 reads as "the screen differs" and
+    # sends the agent off to change widget code over a missing pip install.
+    print("error: install dependencies first: pip install pillow numpy", file=sys.stderr)
+    sys.exit(2)
 
 EXIT_OK = 0
 EXIT_DIFF = 1

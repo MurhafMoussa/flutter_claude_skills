@@ -83,7 +83,7 @@ checks the endpoint passes anyway.
 
 | Rule | `provider` | `signals` | `setstate` |
 |---|---|---|---|
-| Liveness guard | `if (!mounted) return;` on `ChangeNotifier` | disposal check before assigning | `if (!mounted) return;` in the `State` |
+| Liveness guard | `ChangeNotifier` has no `mounted` — set a `_disposed` flag in `dispose()` and return before `notifyListeners()` | disposal check before assigning | `if (!mounted) return;` in the `State` |
 | Narrow subscription | `context.select` | fine-grained signal reads | n/a — keep the `State` small instead |
 | Side effects | listener outside `build` | `effect` | after the `await`, not in `build` |
 | Test entry point | construct the notifier directly | read the signal | `testWidgets` + `pumpWidget` |
@@ -100,8 +100,10 @@ setting, rather than quietly introducing a second stack.
   decide business rules.
 - One holder for a whole screen with eight unrelated responsibilities. Split by concern,
   not by route.
-- Emitting or assigning a value equal to the current state and expecting a rebuild. Every
-  one of these stacks deduplicates by equality. If a list changed in place, produce a new
-  list rather than mutating the existing one.
+- Emitting or assigning a value equal to the current state and expecting a rebuild. Bloc,
+  Cubit, Riverpod, and signals compare the new state with the current one and skip the
+  update when they match. `setState` and `notifyListeners` rebuild regardless, which hides
+  the mistake until the code moves to a stack that compares. If a list changed in place,
+  produce a new list rather than mutating the existing one.
 - Reading state non-reactively inside `build` (`context.read`, `ref.read`). It does not
   subscribe, so the UI goes stale in a way that looks like a caching bug.

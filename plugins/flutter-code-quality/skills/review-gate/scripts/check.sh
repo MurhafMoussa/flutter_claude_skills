@@ -20,12 +20,14 @@ set -uo pipefail
 SKIP_TESTS=false
 FORCE_ALL=false
 PROFILE_PATH=""
+PROFILE_EXPLICIT=false
+LEGACY_PROFILE_IGNORED=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --skip-tests) SKIP_TESTS=true; shift ;;
     --all)        FORCE_ALL=true; shift ;;
-    --profile)    PROFILE_PATH="${2:-}"; [ -n "$PROFILE_PATH" ] || { printf 'gate: --profile needs a path\n' >&2; exit 2; }; shift 2 ;;
+    --profile)    PROFILE_PATH="${2:-}"; PROFILE_EXPLICIT=true; [ -n "$PROFILE_PATH" ] || { printf 'gate: --profile needs a path\n' >&2; exit 2; }; shift 2 ;;
     -h|--help)    sed -n '2,16p' "$0"; exit 0 ;;
     *) printf 'gate: unknown option %s\n' "$1" >&2; exit 2 ;;
   esac
@@ -34,6 +36,7 @@ done
 if [ -z "$PROFILE_PATH" ]; then
   if [ -f .agents/flutter-profile.yaml ]; then
     PROFILE_PATH=".agents/flutter-profile.yaml"
+    [ -f .claude/flutter-profile.yaml ] && LEGACY_PROFILE_IGNORED=true
   elif [ -f .claude/flutter-profile.yaml ]; then
     PROFILE_PATH=".claude/flutter-profile.yaml"
   else
@@ -80,6 +83,17 @@ P_STRICTNESS=block
 P_LOCALES=""
 LOCALES_DECLARED=false
 PROFILE_LABEL="defaults (no $PROFILE_PATH)"
+
+# An explicit --profile that does not exist is a typo, not a request for the defaults.
+# Falling back would apply conventions the project never asked for and exit 0 on them.
+if [ "$PROFILE_EXPLICIT" = true ] && [ ! -f "$PROFILE_PATH" ]; then
+  die "profile: $PROFILE_PATH does not exist"
+fi
+
+# Two profiles that disagree are resolved silently by lookup order, so say which one lost.
+if [ "$LEGACY_PROFILE_IGNORED" = true ]; then
+  note ".claude/flutter-profile.yaml is ignored because .agents/flutter-profile.yaml exists — delete one so they cannot disagree"
+fi
 
 # Flat `key: value` only, with `#` comments stripped. Deliberately not a YAML parser: the
 # profile is nine scalar fields and one inline list, and a dependency on PyYAML would put
